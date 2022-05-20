@@ -1,0 +1,78 @@
+import numpy as np
+import pandas as pd
+import shapefile as shp
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def read_shapefile(sf):
+    fields = [x[0] for x in sf.fields][1:]
+    records = [list(i) for i in sf.records()]
+    shps = [s.points for s in sf.shapes()]
+    df = pd.DataFrame(columns=fields, data=records)
+    df = df.assign(coords=shps)
+    return df
+
+def plot_shape(id, s=None):
+    plt.figure()
+    ax = plt.axes()
+    ax.set_aspect('equal')
+    shape_ex = sf.shape(id)
+    x_lon = np.zeros((len(shape_ex.points),1))
+    y_lat = np.zeros((len(shape_ex.points),1))
+    for ip in range(len(shape_ex.points)):
+        x_lon[ip] = shape_ex.points[ip][0]
+        y_lat[ip] = shape_ex.points[ip][1]
+    plt.plot(x_lon,y_lat) 
+    x0 = np.mean(x_lon)
+    y0 = np.mean(y_lat)
+    plt.text(x0, y0, s, fontsize=10)
+    plt.xlim(shape_ex.bbox[0],shape_ex.bbox[2])
+    return x0, y0
+        
+def plot_map_fill_multiples_ids(title, ids, sf,x_lim = None, y_lim = None, figsize = (11,9), color = 'r'):
+    plt.figure(figsize = figsize)
+    fig, ax = plt.subplots(figsize = figsize)
+    fig.suptitle(title, fontsize=16)
+    for shape in sf.shapeRecords():
+        x = [i[0] for i in shape.shape.points[:]]
+        y = [i[1] for i in shape.shape.points[:]]
+        ax.plot(x, y, 'k')
+    for id in ids:
+        shape_ex = sf.shape(id)
+        x_lon = np.zeros((len(shape_ex.points),1))
+        y_lat = np.zeros((len(shape_ex.points),1))
+        for ip in range(len(shape_ex.points)):
+            x_lon[ip] = shape_ex.points[ip][0]
+            y_lat[ip] = shape_ex.points[ip][1]
+        ax.fill(x_lon,y_lat, color)
+        x0 = np.mean(x_lon)
+        y0 = np.mean(y_lat)
+        plt.text(x0, y0, id, fontsize=10)
+    if (x_lim != None) & (y_lim != None):     
+        plt.xlim(x_lim)
+        plt.ylim(y_lim)
+
+def setupEmptyMap(path):
+    sns.set_theme(style='whitegrid', palette='bright', color_codes=True) 
+    sns.mpl.rc('figure', figsize=(10,6))
+    shp_path = path
+    return shp.Reader(shp_path)
+
+def load_data(path):
+    donnees = pd.read_csv(path, sep='|', decimal= ',')
+    newdata=[]
+    data = donnees[["Date mutation","Nature mutation","Valeur fonciere","Code voie","B/T/Q","Type de voie","Voie","Code postal","Commune","Code departement","Code commune","Section","No plan","Nombre de lots","Type local","Surface reelle bati","Nombre pieces principales","Nature culture","Nature culture speciale","Surface terrain"]]
+    for line in data.values.tolist():
+        if(line[9]==2 or line[9]==59 or line[9]==60 or line[9]==62 or line[9]==80):
+            print(line)
+            newdata.append(line)
+    df=pd.DataFrame(newdata,columns=["Date mutation","Nature mutation","Valeur fonciere","Code voie","B/T/Q","Type de voie","Voie","Code postal","Commune","Code departement","Code commune","Section","No plan","Nombre de lots","Type local","Surface reelle bati","Nombre pieces principales","Nature culture","Nature culture speciale","Surface terrain"])
+    return df
+
+def prix_m2(data):
+    for line in data.values.tolist():
+        prix_m2=(line[2]/line[16]
+
+sf=setupEmptyMap("Python/data/communes/communes.shp")
+dt=load_data("Python/data/valeursfoncieres-2021.txt")
+print(prix_m2(dt))
